@@ -11,4 +11,4 @@ try:
 except response.exception.requestException as e:
     print(f"An error occured: {e}")  
 
-    Hello world
+    
