@@ -10,4 +10,5 @@ try:
         print(f"failed with code {response.status_code}")   
 except response.exception.requestException as e:
     print(f"An error occured: {e}")  
-    yrtfrtrh    
+
+    main test
