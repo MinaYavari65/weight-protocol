@@ -8,7 +8,7 @@ class JointSet:
     def __init__(self, jointComponents, id):
         self.id = id
         self.jointComponents = jointComponents    
-    def updateDynamicmap(self, dynamicMap):
+    def updateDynamicMap(self, dynamicMap):
         for component in self.jointComponents: dynamicMap[component.id] = self.id
         return 
     def __str__(self):
@@ -29,6 +29,24 @@ class ArchitectureGenerator:
     def addMapping(self, componentId, jointSetId):
         self.mapping[componentId] = jointSetId
 
+def createMasters(generator, dynamic):
+    masters = {}
+    for jointSetId, value in generator.jointSets.items(): 
+        m = set([])        
+        for componentId, jointSetId2 in generator.mapping.items():
+            if(jointSetId == jointSetId2): m.add(dynamic[componentId])            
+        masters[jointSetId] = m
+    return masters
+
+def createSlaves(generator, masters):
+    slaves = {}
+    for jointSetId, value in generator.jointSets.items():  
+        s = []    
+        for jointSetId2, mastersL in masters.items():        
+            if jointSetId in mastersL: s.append(jointSetId2)
+        slaves[jointSetId] = s
+    return slaves
+
 dynamic = {}
 
 c1 = Component("C1")
@@ -45,12 +63,12 @@ c11 = Component("C11")
 c12 = Component("C12")
 c13 = Component("C13")
 
-a1 = JointSet([c1], "A1"); a1.updateDynamicmap(dynamic)
-a2 = JointSet([c2,c3], "A2"); a2.updateDynamicmap(dynamic)
-a3 = JointSet([c4,c5, c6], "A3"); a3.updateDynamicmap(dynamic)
-a4 = JointSet([c7,c8], "A4"); a4.updateDynamicmap(dynamic)
-a5 = JointSet([c9, c10, c11, c12], "A5"); a5.updateDynamicmap(dynamic)
-a6 = JointSet([c13], "A6"); a6.updateDynamicmap(dynamic)
+a1 = JointSet([c1], "A1"); a1.updateDynamicMap(dynamic)
+a2 = JointSet([c2,c3], "A2"); a2.updateDynamicMap(dynamic)
+a3 = JointSet([c4,c5, c6], "A3"); a3.updateDynamicMap(dynamic)
+a4 = JointSet([c7,c8], "A4"); a4.updateDynamicMap(dynamic)
+a5 = JointSet([c9, c10, c11, c12], "A5"); a5.updateDynamicMap(dynamic)
+a6 = JointSet([c13], "A6"); a6.updateDynamicMap(dynamic)
 
 generator = ArchitectureGenerator()
 generator.addComponent(c1)
@@ -86,23 +104,7 @@ generator.addMapping("C11", "A6");
 generator.addMapping("C12", "A6"); 
 generator.addMapping("C13", ""); 
 
-#print(generator.components)
-#print(generator.jointSets)
-#print(generator.mapping)
-
-masters = {}
-for jointSetId, value in generator.jointSets.items(): 
-    m = set([])        
-    for componentId, jointSetId2 in generator.mapping.items():
-        if(jointSetId == jointSetId2): m.add(dynamic[componentId])            
-    masters[jointSetId] = m        
-
-slaves = {}
-for jointSetId, value in generator.jointSets.items():  
-    s = []    
-    for jointSetId2, mastersL in masters.items():        
-        if jointSetId in mastersL: s.append(jointSetId2)
-    slaves[jointSetId] = s
-
+masters = createMasters(generator, dynamic)
+slaves = createSlaves(generator, dynamic)
 print(masters)       
 print(slaves)       
