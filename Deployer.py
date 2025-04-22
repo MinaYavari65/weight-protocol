@@ -29,26 +29,34 @@ class ArchitectureGenerator:
     def addMapping(self, componentId, jointSetId):
         self.mapping[componentId] = jointSetId
 
-def createMasters(generator, dynamic):
-    masters = {}
-    for jointSetId, value in generator.jointSets.items(): 
-        m = set([])        
-        for componentId, jointSetId2 in generator.mapping.items():
-            if(jointSetId == jointSetId2): m.add(dynamic[componentId])            
-        masters[jointSetId] = m
-    return masters
+class HierarchicalControl:
+    def __init__(self, architectureGenerator, dynamicTable): 
+        self.architectureGenerator = architectureGenerator
+        self.dynamicTable = dynamicTable
+        self.masters = self.createMasters()
+        self.slaves = self.createSlaves()
 
-def createSlaves(generator, masters):
-    slaves = {}
-    for jointSetId, value in generator.jointSets.items():  
-        s = []    
-        for jointSetId2, mastersL in masters.items():        
-            if jointSetId in mastersL: s.append(jointSetId2)
-        slaves[jointSetId] = s
-    return slaves
+    def createMasters(self):
+        masters = {}
+        for jointSetId, value in self.architectureGenerator.jointSets.items(): 
+            m = set()        
+            for componentId, jointSetId2 in self.architectureGenerator.mapping.items():
+                if(jointSetId == jointSetId2): m.add(self.dynamicTable[componentId])            
+            masters[jointSetId] = m
+        return masters
+
+    def createSlaves(self):
+        slaves = {}
+        for jointSetId, value in self.architectureGenerator.jointSets.items():  
+            s = []    
+            for jointSetId2, mastersL in self.masters.items():        
+                if jointSetId in mastersL: s.append(jointSetId2)
+            slaves[jointSetId] = s
+        return slaves
 
 dynamic = {}
 
+# STAGE 1: Define software components 
 c1 = Component("C1")
 c2 = Component("C2")
 c3 = Component("C3")
@@ -63,6 +71,7 @@ c11 = Component("C11")
 c12 = Component("C12")
 c13 = Component("C13")
 
+# STAGE 2: Group software components into joint sets
 a1 = JointSet([c1], "A1"); a1.updateDynamicMap(dynamic)
 a2 = JointSet([c2,c3], "A2"); a2.updateDynamicMap(dynamic)
 a3 = JointSet([c4,c5, c6], "A3"); a3.updateDynamicMap(dynamic)
@@ -70,6 +79,7 @@ a4 = JointSet([c7,c8], "A4"); a4.updateDynamicMap(dynamic)
 a5 = JointSet([c9, c10, c11, c12], "A5"); a5.updateDynamicMap(dynamic)
 a6 = JointSet([c13], "A6"); a6.updateDynamicMap(dynamic)
 
+# STAGE 3: Create software architecture generator
 generator = ArchitectureGenerator()
 generator.addComponent(c1)
 generator.addComponent(c2)
@@ -90,6 +100,8 @@ generator.addJointSet(a3)
 generator.addJointSet(a4)
 generator.addJointSet(a5)
 generator.addJointSet(a6)
+
+# STAGE 4: Define mappings from components to joint sets
 generator.addMapping("C1", "A2"); 
 generator.addMapping("C2", "A3"); 
 generator.addMapping("C3", "A3"); 
@@ -104,7 +116,7 @@ generator.addMapping("C11", "A6");
 generator.addMapping("C12", "A6"); 
 generator.addMapping("C13", ""); 
 
-masters = createMasters(generator, dynamic)
-slaves = createSlaves(generator, dynamic)
-print(masters)       
-print(slaves)       
+# STAGE 5: Use the generator to construct the structure of control
+controlStructure = HierarchicalControl(generator, dynamic)
+print(controlStructure.masters)       
+print(controlStructure.slaves)       
