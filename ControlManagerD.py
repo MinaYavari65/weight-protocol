@@ -66,7 +66,7 @@ class ControlManager(BaseHTTPRequestHandler):
 def run_manager_server(ip, port):
     server_address = (ip, port)
     httpd = HTTPServer(server_address, ControlManager)
-    print('Starting Control Manager Server...')
+    print('Control Manager Server listening on ' + ip + ":" + str(port))
     httpd.serve_forever()
 
 if __name__ == "__main__":
