@@ -165,6 +165,7 @@ controlStructure = HierarchicalControl(generator, dynamic)
 #print(controlStructure.masters)       
 #print(controlStructure.slaves)       
 
+# STAGE 6: Allocate each joint set to a different IP, create a control for it and sed it for remote deployment
 deployer = Deployer(controlStructure, ['http://127.0.0.1:8080', 'http://127.0.0.1:8090'])
 deployer.allocate()
 deployer.deploy()
