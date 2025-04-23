@@ -71,6 +71,6 @@ def run_manager_server(ip, port):
 
 if __name__ == "__main__":
     ip = '127.0.0.1'
-    port = 8080
+    port = 8081
     ControlManager.next_port = port
     run_manager_server(ip, port)
