@@ -1,6 +1,11 @@
 import random
 import requests
 
+class Host:
+    def __init__(self, ip, port):
+        self.ip = ip
+        self.port = port
+
 class Component:
     def __init__(self, id):
         self.id = id    
@@ -67,30 +72,35 @@ class Deployer:
         self.controlManagers = controlManagers
         self.allocation = {}
         self.allocationIP = {}
-        for manager in controlManagers: self.allocationIP[manager] = []
+        self.controlIPs = {}
+        self.controlPorts = {}
+        for manager in controlManagers: self.allocationIP[manager.ip + ":" + str(manager.port)] = []
 
     def allocate(self):
-        for jointSetId, jointSet in self.hierarchicalControl.architectureGenerator.jointSets.items():            
-            ip = random.choice(self.controlManagers)
-            self.allocation[jointSetId] = ip
-            self.allocationIP[ip].append(jointSetId)
+        for jointSetId, jointSet in self.hierarchicalControl.architectureGenerator.jointSets.items():        
+            random_index = random.randint(0, len(self.controlManagers) - 1)                            
+            address = self.controlManagers[random_index].ip + ":" + str(self.controlManagers[random_index].port)
+            self.allocation[jointSetId] = address
+            self.allocationIP[address].append(jointSetId)
+            self.controlIPs[jointSetId] = self.controlManagers[random_index].ip
+            self.controlPorts[jointSetId] = self.controlManagers[random_index].port+len(self.allocationIP[address])
 
     def deploy(self):
-        for ip in self.controlManagers:
-            data = {}
-            targets = self.allocationIP[ip]            
-            for jointSetId in targets:
+        for manager in self.controlManagers:
+            data = {}                                    
+            for jointSetId in self.allocationIP[manager.ip + ":" + str(manager.port)]:
                 data[jointSetId] = {}
 
-                data[jointSetId]['masters'] = {}
-                for master in self.hierarchicalControl.masters[jointSetId]:
-                    data[jointSetId]['masters'][master] = self.allocation[master]
+                data[jointSetId]['masters'] = {}                
+                for master in self.hierarchicalControl.masters[jointSetId]:                    
+                    data[jointSetId]['masters'][master] = self.controlIPs[master] + ":" + str(self.controlPorts[master])
                 data[jointSetId]['slaves'] = {}
                 for slave in self.hierarchicalControl.slaves[jointSetId]:
-                    data[jointSetId]['slaves'][slave] = self.allocation[slave]
-                data[jointSetId]['components'] = self.hierarchicalControl.architectureGenerator.jointSets[jointSetId].getComponentIDList()                        
+                    data[jointSetId]['slaves'][slave] = self.controlIPs[slave] + ":" + str(self.controlPorts[slave])
+                data[jointSetId]['components'] = self.hierarchicalControl.architectureGenerator.jointSets[jointSetId].getComponentIDList()                                             
+                data[jointSetId]['port'] = self.controlPorts[jointSetId]
             try:            
-                response = requests.post(ip, json=data)            
+                response = requests.post(manager.ip + ":" + str(manager.port), json=data)            
                 if response.status_code == 200:
                     print(response.text)
                 else:
@@ -146,18 +156,18 @@ generator.addJointSet(a5)
 generator.addJointSet(a6)
 
 # STAGE 4: Define mappings from components to joint sets
-generator.addMapping("C1", "A2"); 
-generator.addMapping("C2", "A3"); 
-generator.addMapping("C3", "A3"); 
-generator.addMapping("C4", "A6"); 
-generator.addMapping("C5", "A4"); 
-generator.addMapping("C6", "A5"); 
-generator.addMapping("C7", "A6"); 
-generator.addMapping("C8", "A6"); 
-generator.addMapping("C9", "A6"); 
-generator.addMapping("C10", "A6"); 
-generator.addMapping("C11", "A6"); 
-generator.addMapping("C12", "A6"); 
+generator.addMapping("C1", "O2"); 
+generator.addMapping("C2", "O3"); 
+generator.addMapping("C3", "O3"); 
+generator.addMapping("C4", "O6"); 
+generator.addMapping("C5", "O4"); 
+generator.addMapping("C6", "O5"); 
+generator.addMapping("C7", "O6"); 
+generator.addMapping("C8", "O6"); 
+generator.addMapping("C9", "O6"); 
+generator.addMapping("C10", "O6"); 
+generator.addMapping("C11", "O6"); 
+generator.addMapping("C12", "O6"); 
 generator.addMapping("C13", ""); 
 
 # STAGE 5: Use the generator to construct the structure of control
@@ -165,7 +175,9 @@ controlStructure = HierarchicalControl(generator, dynamic)
 #print(controlStructure.masters)       
 #print(controlStructure.slaves)       
 
-# STAGE 6: Allocate each joint set to a different IP, create a control for it and sed it for remote deployment
-deployer = Deployer(controlStructure, ['http://127.0.0.1:8080', 'http://127.0.0.1:8090'])
+# STAGE 6: Allocate each joint set to a different IP, create a control for it and send it for remote deployment
+host1 = Host('http://127.0.0.1', 8080)
+host2 = Host('http://127.0.0.1', 8090)
+deployer = Deployer(controlStructure, [host1, host2])
 deployer.allocate()
 deployer.deploy()
