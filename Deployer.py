@@ -7,8 +7,10 @@ class Host:
         self.port = port
 
 class Component:
-    def __init__(self, id):
+    def __init__(self, id, featureTuple):
         self.id = id    
+        self.featureTuple = featureTuple # Preferences for n non-functional requirements
+
     def __str__(self):
         return f"Component {self.id}"
 
@@ -16,13 +18,14 @@ class JointSet:
     def __init__(self, jointComponents, id):
         self.id = id
         self.jointComponents = jointComponents    
-    def updateDynamicMap(self, dynamicMap):
-        for component in self.jointComponents: dynamicMap[component.id] = self.id
+    def updateDynamicMap(self, dynamic):
+        for component in self.jointComponents: dynamic[component.id] = self.id
         return 
-    def getComponentIDList(self):
-        list = []
-        for component in self.jointComponents: list.append(component.id)
-        return list
+    def getComponentMap(self):
+        map = {}
+        for component in self.jointComponents: 
+            map[component.id] = component.featureTuple            
+        return map
     def __str__(self):
         return f"JointSet {self.id}: {self.jointComponents}"
 
@@ -42,9 +45,9 @@ class ArchitectureGenerator:
         self.mapping[componentId] = jointSetId
 
 class HierarchicalControl:
-    def __init__(self, architectureGenerator, dynamicTable): 
+    def __init__(self, architectureGenerator, dynamic): 
         self.architectureGenerator = architectureGenerator
-        self.dynamicTable = dynamicTable
+        self.dynamic = dynamic
         self.masters = self.createMasters()
         self.slaves = self.createSlaves()
 
@@ -53,7 +56,7 @@ class HierarchicalControl:
         for jointSetId, value in self.architectureGenerator.jointSets.items(): 
             m = set()        
             for componentId, jointSetId2 in self.architectureGenerator.mapping.items():
-                if(jointSetId == jointSetId2): m.add(self.dynamicTable[componentId])            
+                if(jointSetId == jointSetId2): m.add(self.dynamic[componentId])            
             masters[jointSetId] = m
         return masters
 
@@ -97,7 +100,8 @@ class Deployer:
                 data[jointSetId]['slaves'] = {}
                 for slave in self.hierarchicalControl.slaves[jointSetId]:
                     data[jointSetId]['slaves'][slave] = self.controlIPs[slave] + ":" + str(self.controlPorts[slave])
-                data[jointSetId]['components'] = self.hierarchicalControl.architectureGenerator.jointSets[jointSetId].getComponentIDList()                                             
+                data[jointSetId]['components'] = self.hierarchicalControl.architectureGenerator.jointSets[jointSetId].getComponentMap()
+                data[jointSetId]['mapping'] = self.hierarchicalControl.architectureGenerator.mapping                                           
                 data[jointSetId]['port'] = self.controlPorts[jointSetId]
             try:            
                 response = requests.post(manager.ip + ":" + str(manager.port), json=data)            
@@ -111,19 +115,19 @@ class Deployer:
 dynamic = {}
 
 # STAGE 1: Define software components 
-c1 = Component("C1")
-c2 = Component("C2")
-c3 = Component("C3")
-c4 = Component("C4")
-c5 = Component("C5")
-c6 = Component("C6")
-c7 = Component("C7")
-c8 = Component("C8")
-c9 = Component("C9")
-c10 = Component("C10")
-c11 = Component("C11")
-c12 = Component("C12")
-c13 = Component("C13")
+c1 = Component("C1", (0.5,0.7))
+c2 = Component("C2", (0.3,10))
+c3 = Component("C3", (0.6, 10))
+c4 = Component("C4", (0.7, 2))
+c5 = Component("C5", (3, 4))
+c6 = Component("C6", (5, 6))
+c7 = Component("C7", (5, 5))
+c8 = Component("C8", (3,4))
+c9 = Component("C9", (2,8))
+c10 = Component("C10", (1, 1))
+c11 = Component("C11", (2, 3))
+c12 = Component("C12", (0.2, 0.5))
+c13 = Component("C13", (0.5, 0.4))
 
 # STAGE 2: Group software components into joint sets
 a1 = JointSet([c1], "O1"); a1.updateDynamicMap(dynamic)
@@ -178,6 +182,6 @@ controlStructure = HierarchicalControl(generator, dynamic)
 # STAGE 6: Allocate each joint set to a different IP, create a control for it and send it for remote deployment
 host1 = Host('http://127.0.0.1', 8080)
 host2 = Host('http://127.0.0.1', 8090)
-deployer = Deployer(controlStructure, [host1, host2])
+deployer = Deployer(controlStructure, [host1])
 deployer.allocate()
 deployer.deploy()

@@ -3,26 +3,29 @@ import json
 import threading
 import time
 import requests
+import random
 
 class Component:
-    def __init__(self, name):
+    def __init__(self, name, featureTuple):
         self.name = name
+        self.featureTuple = featureTuple
         self.weight = 0.0
 
 class Control:
-    def __init__(self, id, masters, slaves, ip, port, components):
+    def __init__(self, id, masters, slaves, ip, port, components, tupleSize):
         self.id = id
         self.masters = masters # Example {'O3': '192.168.0.1',...}
         self.slaves = slaves # Example {'O1': '192.168.0.3',...}
         self.ip = ip
         self.port = port
         self.components = components
+        self.tupleSize = tupleSize
     def isInitiator(self):        
         return not bool(self.slaves)
     def __str__(self):
         return f"{self.ip}:{self.port}"
 
-def run_control_server(id, port, isInitiator, masters, slaves):
+def run_control_server(id, port, isInitiator, masters, slaves, tupleSize, components):
     class ControlServer(BaseHTTPRequestHandler):
         def do_POST(self):
             content_len = int(self.headers.get('content-length', 0))
@@ -39,7 +42,17 @@ def run_control_server(id, port, isInitiator, masters, slaves):
     def updateWeights():
         while True:            
             time.sleep(10)
-            print(f"Control {id} has updated weights")
+            environmentTuple = tuple(random.uniform(0.0, 1.0) for _ in range(tupleSize))
+            
+            # DOT Product (most optimisation problems are based on this)
+            for component in components:
+                sum = 0.0
+                for i in range(0, tupleSize):
+                    sum += environmentTuple[i]*component.featureTuple[i]
+                component.weight = sum
+                print (f"{id}-->{component.name}: {component.weight}")
+            
+            #print(f"Control {id} has updated weights")
 
     def initiateAggregation():
         while True:            
@@ -80,10 +93,13 @@ class ControlManager(BaseHTTPRequestHandler):
             #self.next_port += 1 # TODO: Warning! Test port before using it
             
             components = []
-            for component in value['components']: components.append(Component(component))
+            tupleSize = 0
+            for componentID, featureTuple in value['components'].items(): 
+                components.append(Component(componentID, featureTuple))
+                tupleSize = len(featureTuple)
 
-            control = Control(key, value['masters'], value['slaves'], self.server.server_address[0], value['port'], components)              
-            t2 = threading.Thread(target=run_control_server, args=(control.id, control.port, control.isInitiator(), control.masters, control.slaves))
+            control = Control(key, value['masters'], value['slaves'], self.server.server_address[0], value['port'], components, tupleSize)              
+            t2 = threading.Thread(target=run_control_server, args=(control.id, control.port, control.isInitiator(), control.masters, control.slaves, control.tupleSize, control.components))
             t2.daemon = True  # daemon thread so it won't block program exit
             t2.start()                    
                 
