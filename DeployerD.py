@@ -33,7 +33,7 @@ class ArchitectureGenerator:
     def __init__(self): 
         self.components = {}
         self.jointSets = {}
-        self.mapping = {}
+        self.mu = {}
 
     def addComponent(self, component):
         self.components[component.id] = component        
@@ -41,8 +41,8 @@ class ArchitectureGenerator:
     def addJointSet(self, jointSet):
         self.jointSets[jointSet.id] = jointSet        
     
-    def addMapping(self, componentId, jointSetId):
-        self.mapping[componentId] = jointSetId
+    def addMappingToMu(self, componentId, jointSetId):
+        self.mu[componentId] = jointSetId
 
 class HierarchicalControl:
     def __init__(self, architectureGenerator, dynamic): 
@@ -55,7 +55,7 @@ class HierarchicalControl:
         masters = {}
         for jointSetId, value in self.architectureGenerator.jointSets.items(): 
             m = set()        
-            for componentId, jointSetId2 in self.architectureGenerator.mapping.items():
+            for componentId, jointSetId2 in self.architectureGenerator.mu.items():
                 if(jointSetId == jointSetId2): m.add(self.dynamic[componentId])            
             masters[jointSetId] = m
         return masters
@@ -101,7 +101,7 @@ class Deployer:
                 for slave in self.hierarchicalControl.slaves[jointSetId]:
                     data[jointSetId]['slaves'][slave] = self.controlIPs[slave] + ":" + str(self.controlPorts[slave])
                 data[jointSetId]['components'] = self.hierarchicalControl.architectureGenerator.jointSets[jointSetId].getComponentMap()
-                data[jointSetId]['mapping'] = self.hierarchicalControl.architectureGenerator.mapping                                           
+                data[jointSetId]['mu'] = self.hierarchicalControl.architectureGenerator.mu                                           
                 data[jointSetId]['port'] = self.controlPorts[jointSetId]
             try:            
                 response = requests.post(manager.ip + ":" + str(manager.port), json=data)            
@@ -116,16 +116,16 @@ dynamic = {}
 
 # STAGE 1: Define software components 
 c1 = Component("C1", (0.5,0.7))
-c2 = Component("C2", (0.3,10))
-c3 = Component("C3", (0.6, 10))
-c4 = Component("C4", (0.7, 2))
-c5 = Component("C5", (3, 4))
-c6 = Component("C6", (5, 6))
-c7 = Component("C7", (5, 5))
-c8 = Component("C8", (3,4))
-c9 = Component("C9", (2,8))
-c10 = Component("C10", (1, 1))
-c11 = Component("C11", (2, 3))
+c2 = Component("C2", (0.3,0.2))
+c3 = Component("C3", (0.6, 0.3))
+c4 = Component("C4", (0.9, 0.9))
+c5 = Component("C5", (0.4, 0.5))
+c6 = Component("C6", (0.5, 0.6))
+c7 = Component("C7", (0.1, 0.1))
+c8 = Component("C8", (0.9,0.7))
+c9 = Component("C9", (0.9,0.3))
+c10 = Component("C10", (0.8, 0.2))
+c11 = Component("C11", (0.7, 0.3))
 c12 = Component("C12", (0.2, 0.5))
 c13 = Component("C13", (0.5, 0.4))
 
@@ -159,20 +159,20 @@ generator.addJointSet(a4)
 generator.addJointSet(a5)
 generator.addJointSet(a6)
 
-# STAGE 4: Define mappings from components to joint sets
-generator.addMapping("C1", "O2"); 
-generator.addMapping("C2", "O3"); 
-generator.addMapping("C3", "O3"); 
-generator.addMapping("C4", "O6"); 
-generator.addMapping("C5", "O4"); 
-generator.addMapping("C6", "O5"); 
-generator.addMapping("C7", "O6"); 
-generator.addMapping("C8", "O6"); 
-generator.addMapping("C9", "O6"); 
-generator.addMapping("C10", "O6"); 
-generator.addMapping("C11", "O6"); 
-generator.addMapping("C12", "O6"); 
-generator.addMapping("C13", ""); 
+# STAGE 4: Define mappings from components to joint sets (\mu)
+generator.addMappingToMu("C1", "O2"); 
+generator.addMappingToMu("C2", "O3"); 
+generator.addMappingToMu("C3", "O3"); 
+generator.addMappingToMu("C4", "O6"); 
+generator.addMappingToMu("C5", "O4"); 
+generator.addMappingToMu("C6", "O5"); 
+generator.addMappingToMu("C7", "O6"); 
+generator.addMappingToMu("C8", "O6"); 
+generator.addMappingToMu("C9", "O6"); 
+generator.addMappingToMu("C10", "O6"); 
+generator.addMappingToMu("C11", "O6"); 
+generator.addMappingToMu("C12", "O6"); 
+generator.addMappingToMu("C13", ""); 
 
 # STAGE 5: Use the generator to construct the structure of control
 controlStructure = HierarchicalControl(generator, dynamic)
