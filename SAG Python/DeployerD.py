@@ -1,5 +1,5 @@
 import random
-import requests # type: ignore
+import requests
 
 class Host:
     def __init__(self, ip, port):

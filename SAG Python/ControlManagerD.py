@@ -2,7 +2,7 @@ from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler, HTTPServer
 import json
 import threading
 import time
-#import requests
+import requests
 import random
 from datetime import datetime
 
@@ -167,8 +167,7 @@ class ControlManager(BaseHTTPRequestHandler):
                 components.append(Component(componentID, featureTuple))
                 tupleSize = len(featureTuple)
 
-            control = Control(key, value['masters'], value['slaves'], self.server.server_address[0], value['port'], components, 
-                              tupleSize, value['mu'])              
+            control = Control(key, value['masters'], value['slaves'], self.server.server_address[0], value['port'], components, tupleSize, value['mu'])              
             t2 = threading.Thread(target=run_control_server, args=(control.id, control.port, control.isInitiator(), control.isEnder(), control.masters, control.slaves, control.tupleSize, control.components, control.mu))
             t2.daemon = True  # daemon thread so it won't block program exit
             t2.start()                    
