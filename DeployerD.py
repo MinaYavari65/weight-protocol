@@ -1,5 +1,5 @@
 import random
-import requests # type: ignore
+import requests
 
 class Host:
     def __init__(self, ip, port):
@@ -119,10 +119,10 @@ c1 = Component("C1", (0.5,0.7))
 c2 = Component("C2", (0.3,0.2))
 c3 = Component("C3", (0.6, 0.3))
 c4 = Component("C4", (0.9, 0.9))
-c5 = Component("C5", (0.4, 0.5))
-c6 = Component("C6", (0.5, 0.6))
-c7 = Component("C7", (0.1, 0.1))
-c8 = Component("C8", (0.9,0.7))
+c5 = Component("C5", (0.3, 0.2))
+c6 = Component("C6", (0.43, 0.56))
+c7 = Component("C7", (0.3, 0.4))
+c8 = Component("C8", (0.3,0.3))
 c9 = Component("C9", (0.9,0.3))
 c10 = Component("C10", (0.8, 0.2))
 c11 = Component("C11", (0.7, 0.3))
@@ -166,8 +166,8 @@ generator.addMappingToMu("C3", "O3");
 generator.addMappingToMu("C4", "O6"); 
 generator.addMappingToMu("C5", "O4"); 
 generator.addMappingToMu("C6", "O5"); 
-generator.addMappingToMu("C7", "O6"); 
-generator.addMappingToMu("C8", "O6"); 
+generator.addMappingToMu("C7", "O5"); 
+generator.addMappingToMu("C8", "O5"); 
 generator.addMappingToMu("C9", "O6"); 
 generator.addMappingToMu("C10", "O6"); 
 generator.addMappingToMu("C11", "O6"); 
